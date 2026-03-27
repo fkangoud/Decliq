@@ -3,28 +3,19 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { Check, Zap, Loader2 } from 'lucide-react'
 
 const PLANS = [
   {
-    id: 'free',
-    name: 'Gratuit',
-    price: 0,
-    features: ['3 workflows', '100 exécutions/mois', '2 intégrations'],
+    id: 'free', name: 'Gratuit', price: '0', period: '',
+    features: ['3 workflows actifs', '100 exécutions/mois', '2 intégrations', 'Support communautaire'],
   },
   {
-    id: 'pro',
-    name: 'Pro',
-    price: 29,
-    priceEnv: 'pro',
-    features: ['50 workflows', '10 000 exécutions/mois', '20 intégrations', 'Support prioritaire'],
+    id: 'pro', name: 'Pro', price: '29', period: '/mois',
+    features: ['50 workflows actifs', '10 000 exécutions/mois', '20 intégrations', 'Support prioritaire', 'Historique 90 jours'],
   },
   {
-    id: 'team',
-    name: 'Équipe',
-    price: 99,
-    priceEnv: 'team',
-    features: ['Workflows illimités', '100 000 exécutions/mois', 'Intégrations illimitées', 'Support dédié'],
+    id: 'team', name: 'Équipe', price: '99', period: '/mois',
+    features: ['Workflows illimités', '100 000 exécutions/mois', 'Intégrations illimitées', 'Support dédié < 2h', 'SSO & gestion des rôles'],
   },
 ]
 
@@ -55,7 +46,7 @@ export default function BillingPage() {
     })
     const data = await res.json()
     if (data.url) window.location.href = data.url
-    else { alert('Erreur lors de la redirection vers le paiement.'); setUpgrading(null) }
+    else { alert('Erreur lors de la redirection.'); setUpgrading(null) }
   }
 
   async function handlePortal() {
@@ -64,75 +55,105 @@ export default function BillingPage() {
     if (data.url) window.location.href = data.url
   }
 
-  if (loading) return <div className="p-8 text-sm text-slate-400">Chargement...</div>
+  if (loading) return <div style={{padding:32,fontSize:14,color:'#94a3b8',fontFamily:"'DM Sans',system-ui"}}>Chargement...</div>
 
   const currentPlan = profile?.plan || 'free'
 
   return (
-    <div className="p-8 max-w-4xl">
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-slate-900">Abonnement</h1>
-        <p className="text-slate-500 mt-1">
-          Plan actuel : <span className="font-medium text-slate-900 capitalize">{currentPlan}</span>
-        </p>
+    <div style={{fontFamily:"'DM Sans',system-ui,sans-serif"}}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Serif+Display&display=swap');
+        *{box-sizing:border-box}
+        .b-topbar{background:white;border-bottom:1px solid #e2e8f0;padding:0 32px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+        .b-content{padding:28px 32px;max-width:900px}
+        .b-current-bar{background:white;border:1px solid #e2e8f0;border-radius:14px;padding:20px 24px;display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+        .b-current-info h3{font-size:15px;font-weight:700;color:#0f172a;margin-bottom:3px}
+        .b-current-info p{font-size:13px;color:#64748b}
+        .b-portal-btn{background:#f1f5f9;color:#374151;border:1px solid #e2e8f0;padding:9px 18px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',system-ui;transition:all 0.15s}
+        .b-portal-btn:hover{background:#e2e8f0}
+        .plans-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+        .plan-card{background:white;border:1px solid #e2e8f0;border-radius:14px;padding:26px;display:flex;flex-direction:column;position:relative}
+        .plan-card.current{border-color:#1d4ed8;border-width:2px;box-shadow:0 4px 16px rgba(29,78,216,0.1)}
+        .plan-tag{position:absolute;top:-11px;left:20px;background:#1d4ed8;color:white;font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:3px 12px;border-radius:100px}
+        .plan-name{font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#64748b;margin-bottom:8px}
+        .plan-price{font-family:'DM Serif Display',serif;font-size:40px;color:#0f172a;font-weight:400;letter-spacing:-0.02em;line-height:1;margin-bottom:3px}
+        .plan-period{font-size:14px;color:#94a3b8;margin-bottom:6px}
+        .plan-divider{height:1px;background:#f1f5f9;margin:16px 0}
+        .plan-features{list-style:none;display:flex;flex-direction:column;gap:9px;flex:1;margin-bottom:20px}
+        .plan-feature{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:#374151}
+        .feat-check{width:16px;height:16px;border-radius:50%;background:#dbeafe;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+        .plan-btn{display:flex;align-items:center;justify-content:center;gap:7px;padding:11px;border-radius:9px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:'DM Sans',system-ui;transition:all 0.15s;border:none;width:100%}
+        .plan-btn-primary{background:#1d4ed8;color:white}
+        .plan-btn-primary:hover{background:#1e40af;box-shadow:0 4px 12px rgba(29,78,216,0.25)}
+        .plan-btn-primary:disabled{opacity:0.6;cursor:not-allowed}
+        .plan-btn-disabled{background:#f1f5f9;color:#94a3b8;cursor:not-allowed}
+        @media(max-width:768px){
+          .b-topbar{padding:0 16px}
+          .b-content{padding:20px 16px}
+          .plans-grid{grid-template-columns:1fr}
+          .b-current-bar{flex-direction:column;align-items:flex-start}
+        }
+        @keyframes spin{to{transform:rotate(360deg)}}
+      `}</style>
+
+      <div className="b-topbar">
+        <span style={{fontSize:15,fontWeight:700,color:'#0f172a'}}>Abonnement</span>
+        <span style={{fontSize:13,color:'#64748b'}}>Plan actuel : <span style={{fontWeight:700,color:'#1d4ed8',textTransform:'capitalize'}}>{currentPlan}</span></span>
       </div>
 
-      {profile?.stripe_customer_id && (
-        <div className="bg-white rounded-xl border border-slate-200 p-5 mb-8 flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-slate-900">Gérer mon abonnement</p>
-            <p className="text-xs text-slate-500 mt-0.5">Modifier le plan, voir les factures, mettre à jour le paiement</p>
-          </div>
-          <button onClick={handlePortal} className="text-sm border border-slate-200 px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors">
-            Portail de facturation →
-          </button>
-        </div>
-      )}
+      <div className="b-content">
 
-      <div className="grid md:grid-cols-3 gap-4">
-        {PLANS.map((plan) => {
-          const isCurrent = plan.id === currentPlan
-          return (
-            <div key={plan.id} className={`bg-white rounded-xl border p-6 flex flex-col ${isCurrent ? 'border-blue-400 ring-1 ring-blue-400' : 'border-slate-200'}`}>
-              {isCurrent && <div className="text-xs font-medium text-blue-600 mb-3">Plan actuel</div>}
-              <h3 className="font-semibold text-slate-900">{plan.name}</h3>
-              <div className="flex items-baseline gap-1 mt-1 mb-4">
-                <span className="text-3xl font-bold text-slate-900">{plan.price}€</span>
-                {plan.price > 0 && <span className="text-sm text-slate-400">/mois</span>}
-              </div>
-              <ul className="space-y-2 flex-1 mb-6">
-                {plan.features.map((f) => (
-                  <li key={f} className="flex items-center gap-2 text-sm text-slate-600">
-                    <Check className="w-4 h-4 text-green-500 shrink-0" />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              {isCurrent ? (
-                <button disabled className="w-full py-2.5 rounded-lg text-sm font-medium bg-slate-100 text-slate-400 cursor-not-allowed">
-                  Plan actuel
-                </button>
-              ) : plan.id === 'free' ? (
-                <button disabled className="w-full py-2.5 rounded-lg text-sm font-medium bg-slate-100 text-slate-400 cursor-not-allowed">
-                  Downgrade non disponible
-                </button>
-              ) : (
-                <button
-                  onClick={() => handleUpgrade(plan.id)}
-                  disabled={upgrading !== null}
-                  className="w-full py-2.5 rounded-lg text-sm font-medium bg-slate-900 text-white hover:bg-slate-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  {upgrading === plan.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-                  Upgrader
-                </button>
-              )}
+        {profile?.stripe_customer_id && (
+          <div className="b-current-bar">
+            <div className="b-current-info">
+              <h3>Gérer mon abonnement</h3>
+              <p>Modifier le plan, consulter les factures, mettre à jour le mode de paiement</p>
             </div>
-          )
-        })}
-      </div>
+            <button className="b-portal-btn" onClick={handlePortal}>Portail de facturation →</button>
+          </div>
+        )}
 
-      <div className="mt-8 p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
-        <strong>Mode test Stripe actif.</strong> Utilisez la carte <span className="font-mono">4242 4242 4242 4242</span>, date 12/26, CVV 123 pour tester sans vrai paiement.
+        <div className="plans-grid">
+          {PLANS.map(plan => {
+            const isCurrent = plan.id === currentPlan
+            return (
+              <div key={plan.id} className={`plan-card ${isCurrent ? 'current' : ''}`}>
+                {isCurrent && <div className="plan-tag">Plan actuel</div>}
+                <div className="plan-name">{plan.name}</div>
+                <div className="plan-price">{plan.price}€</div>
+                <div className="plan-period">{plan.period || 'pour toujours'}</div>
+                <div className="plan-divider" />
+                <ul className="plan-features">
+                  {plan.features.map(f => (
+                    <li key={f} className="plan-feature">
+                      <div className="feat-check">
+                        <svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1 4L3 6L7 2" stroke="#1d4ed8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      </div>
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+                {isCurrent ? (
+                  <button className="plan-btn plan-btn-disabled" disabled>Plan actuel</button>
+                ) : plan.id === 'free' ? (
+                  <button className="plan-btn plan-btn-disabled" disabled>Non disponible</button>
+                ) : (
+                  <button
+                    className="plan-btn plan-btn-primary"
+                    onClick={() => handleUpgrade(plan.id)}
+                    disabled={upgrading !== null}
+                  >
+                    {upgrading === plan.id && (
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{animation:'spin 1s linear infinite'}}><circle cx="7" cy="7" r="5.5" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5"/><path d="M7 1.5A5.5 5.5 0 0112.5 7" stroke="white" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                    )}
+                    Upgrader vers {plan.name}
+                  </button>
+                )}
+              </div>
+            )
+          })}
+        </div>
+
       </div>
     </div>
   )

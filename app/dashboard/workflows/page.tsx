@@ -1,18 +1,19 @@
+import { createServerComponentClient } from '@/lib/supabase'
+import { formatDateTime, formatNumber } from '@/lib/utils'
+import Link from 'next/link'
+import { Plus, Zap, Pause, AlertCircle } from 'lucide-react'
+import { redirect } from 'next/navigation' // Import pour la redirection
+
 export default async function WorkflowsPage() {
   const supabase = createServerComponentClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  // 1. Guard against null user during build/unauthenticated access
+  // 1. Correction du crash : Si pas d'utilisateur, on redirige vers le login
   if (!user) {
-    // You can redirect to login or return a simple message
-    return (
-      <div className="p-8">
-        <p className="text-slate-500">Veuillez vous connecter pour voir vos workflows.</p>
-      </div>
-    )
+    redirect('/auth/login')
   }
 
-  // 2. Now it is safe to use user.id (no ! needed)
+  // 2. Récupération des données (Maintenant 'user.id' est sûr à 100%)
   const { data: workflows } = await supabase
     .from('workflows')
     .select('*')
@@ -23,27 +24,6 @@ export default async function WorkflowsPage() {
     .from('users')
     .select('plan')
     .eq('id', user.id)
-    .single()
-	
-import { createServerComponentClient } from '@/lib/supabase'
-import { formatDateTime, formatNumber } from '@/lib/utils'
-import Link from 'next/link'
-import { Plus, Zap, Pause, AlertCircle } from 'lucide-react'
-
-export default async function WorkflowsPage() {
-  const supabase = createServerComponentClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  const { data: workflows } = await supabase
-    .from('workflows')
-    .select('*')
-    .eq('user_id', user!.id)
-    .order('created_at', { ascending: false })
-
-  const { data: profile } = await supabase
-    .from('users')
-    .select('plan')
-    .eq('id', user!.id)
     .single()
 
   const TRIGGER_LABELS: Record<string, string> = {

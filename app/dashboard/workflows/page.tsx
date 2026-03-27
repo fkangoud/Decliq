@@ -1,3 +1,30 @@
+export default async function WorkflowsPage() {
+  const supabase = createServerComponentClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // 1. Guard against null user during build/unauthenticated access
+  if (!user) {
+    // You can redirect to login or return a simple message
+    return (
+      <div className="p-8">
+        <p className="text-slate-500">Veuillez vous connecter pour voir vos workflows.</p>
+      </div>
+    )
+  }
+
+  // 2. Now it is safe to use user.id (no ! needed)
+  const { data: workflows } = await supabase
+    .from('workflows')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+
+  const { data: profile } = await supabase
+    .from('users')
+    .select('plan')
+    .eq('id', user.id)
+    .single()
+	
 import { createServerComponentClient } from '@/lib/supabase'
 import { formatDateTime, formatNumber } from '@/lib/utils'
 import Link from 'next/link'
